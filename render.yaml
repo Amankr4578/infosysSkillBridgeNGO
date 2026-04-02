@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: infosysskillbridgengo
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 5000
+      - key: FRONTEND_URL
+        value: https://skillbridgex-3oxd.onrender.com
+      - key: JWT_EXPIRE
+        value: 7d
+
+  - type: static
+    name: skillbridgex
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://infosysskillbridgengo.onrender.com/api
+      - key: VITE_SOCKET_URL
+        value: https://infosysskillbridgengo.onrender.com

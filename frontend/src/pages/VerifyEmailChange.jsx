@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-
-const API_BASE = "http://localhost:5000/api/auth";
+import api from "../services/api";
 
 export default function VerifyEmailChange() {
   const [searchParams] = useSearchParams();
@@ -22,7 +20,7 @@ export default function VerifyEmailChange() {
 
     try {
       setStatus("verifying");
-      const response = await axios.post(`${API_BASE}/verify-email-change`, { token });
+      const response = await api.post("/auth/verify-email-change", { token });
       toast.success(response.data?.message || "Email updated successfully");
       setStatus("success");
     } catch (error) {

@@ -1,14 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-
-const API_BASE = "http://localhost:5000/api/auth";
+import api from "../services/api";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -41,7 +39,7 @@ export default function ResetPassword() {
 
     try {
       setSubmitting(true);
-      const response = await axios.post(`${API_BASE}/reset-password`, {
+      const response = await api.post("/auth/reset-password", {
         email,
         token,
         newPassword,

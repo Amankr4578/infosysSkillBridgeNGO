@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,6 +11,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import api from "../services/api";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email"),
@@ -38,7 +38,7 @@ export default function Login() {
 
   const onSubmit = async (values) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", values);
+      const res = await api.post("/auth/login", values);
 
       const { token, user } = res.data;
       login(token, user);
@@ -60,7 +60,7 @@ export default function Login() {
 
     try {
       setIsResending(true);
-      const response = await axios.post("http://localhost:5000/api/auth/resend-verification", {
+      const response = await api.post("/auth/resend-verification", {
         email: unverifiedEmail,
       });
       toast.success(response.data?.message || "Verification email sent.");

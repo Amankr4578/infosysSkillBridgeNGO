@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,6 +10,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import api from "../services/api";
 
 const registerSchema = z
   .object({
@@ -141,7 +141,7 @@ export default function Register() {
         payload.website_url = formValues.website;
       }
 
-      const response = await axios.post("http://localhost:5000/api/auth/register", payload);
+      const response = await api.post("/auth/register", payload);
 
       toast.success(response.data?.message || "Account created. Please verify your email.");
       navigate(`/verify-email?email=${encodeURIComponent(formValues.email)}&sent=1`);

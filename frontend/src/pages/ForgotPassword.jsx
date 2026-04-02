@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-
-const API_BASE = "http://localhost:5000/api/auth";
+import api from "../services/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,7 +22,7 @@ export default function ForgotPassword() {
 
     try {
       setSubmitting(true);
-      const response = await axios.post(`${API_BASE}/forgot-password`, { email });
+      const response = await api.post("/auth/forgot-password", { email });
       toast.success(response.data?.message || "If the email exists, a reset link has been sent.");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not send reset link");

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Mail, RefreshCw, XCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-
-const API_BASE = "http://localhost:5000/api/auth";
+import api from "../services/api";
 
 export default function VerifyEmail() {
   const [params] = useSearchParams();
@@ -23,7 +21,7 @@ export default function VerifyEmail() {
       if (!token || !email) return;
 
       try {
-        await axios.post(`${API_BASE}/verify-email`, { email, token });
+        await api.post("/auth/verify-email", { email, token });
         setStatus("success");
         toast.success("Email verified successfully. You can now sign in.");
       } catch (error) {
@@ -44,7 +42,7 @@ export default function VerifyEmail() {
 
     try {
       setResendLoading(true);
-      const response = await axios.post(`${API_BASE}/resend-verification`, { email });
+      const response = await api.post("/auth/resend-verification", { email });
       toast.success(response.data?.message || "Verification email sent.");
     } catch (error) {
       const message = error.response?.data?.message || "Could not resend verification email";

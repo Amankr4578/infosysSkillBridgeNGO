@@ -36,6 +36,7 @@ export default function Messages() {
   const [attachment, setAttachment] = useState(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const selectedConversationRef = useRef(null);
 
   const getOtherUser = (conversation) => (user.role === "ngo" ? conversation?.volunteer_id : conversation?.ngo_id);
 
@@ -45,21 +46,25 @@ export default function Messages() {
   };
 
   useEffect(() => {
-    if (!loading && user) {
-      fetchConversations();
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
 
-      // Listen for real-time messages
-      socketService.onNewMessage(handleNewMessage);
-      socketService.onMessageSent(handleMessageSent);
-      socketService.onUserTyping(handleUserTyping);
+  useEffect(() => {
+    if (loading || !user) return;
 
-      return () => {
-        socketService.off("receive_message", handleNewMessage);
-        socketService.off("messageSent", handleMessageSent);
-        socketService.off("userTyping", handleUserTyping);
-      };
-    }
-  }, [user, loading, location]);
+    fetchConversations();
+
+    // Listen for real-time messages
+    socketService.onNewMessage(handleNewMessage);
+    socketService.onMessageSent(handleMessageSent);
+    socketService.onUserTyping(handleUserTyping);
+
+    return () => {
+      socketService.off("receive_message", handleNewMessage);
+      socketService.off("messageSent", handleMessageSent);
+      socketService.off("userTyping", handleUserTyping);
+    };
+  }, [user, loading]);
 
   useEffect(() => {
     const conversationId = location.state?.conversationId;
@@ -110,9 +115,16 @@ export default function Messages() {
   const handleNewMessage = (data) => {
     console.log('New message received:', data);
 
+    const activeConversation = selectedConversationRef.current;
+
     // If message is for current conversation, add it to messages
-    if (selectedConversation && data.conversationId === selectedConversation._id) {
-      setMessages(prev => [...prev, data.message]);
+    if (activeConversation && data.conversationId === activeConversation._id && data.message) {
+      setMessages((prev) => {
+        if (data.message?._id && prev.some((msg) => msg._id === data.message._id)) {
+          return prev;
+        }
+        return [...prev, data.message];
+      });
       // Mark as read
       messageService.markMessagesAsRead(data.conversationId);
     }
@@ -123,7 +135,24 @@ export default function Messages() {
 
   const handleMessageSent = (data) => {
     console.log('Message sent confirmation:', data);
-    // Message was sent successfully, already handled by form submission
+
+    const activeConversation = selectedConversationRef.current;
+    if (!activeConversation || data?.conversationId !== activeConversation._id) {
+      fetchConversations();
+      return;
+    }
+
+    const incomingMessage = data?.message;
+    if (incomingMessage) {
+      setMessages((prev) => {
+        if (incomingMessage?._id && prev.some((msg) => msg._id === incomingMessage._id)) {
+          return prev;
+        }
+        return [...prev, incomingMessage];
+      });
+    }
+
+    fetchConversations();
   };
 
   const handleUserTyping = (data) => {
@@ -182,22 +211,6 @@ export default function Messages() {
         status: savedMessage?.status || "sent"
       };
       setMessages(prev => [...prev, newMsg]);
-
-      // Send via socket for real-time delivery
-      const receiverId = user.role === "ngo"
-        ? selectedConversation.volunteer_id._id
-        : selectedConversation.ngo_id._id;
-
-      try {
-        socketService.sendMessage({
-          conversationId: selectedConversation._id,
-          content: messageText || (attachment ? `Attachment: ${attachment.name}` : ""),
-          senderId: user._id,
-          receiverId: receiverId
-        });
-      } catch (socketError) {
-        console.error("Socket emit failed:", socketError);
-      }
 
       setNewMessage("");
       setAttachment(null);

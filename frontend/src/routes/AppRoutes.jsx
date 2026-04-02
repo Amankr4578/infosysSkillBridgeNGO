@@ -82,7 +82,7 @@ function AppContent() {
       setShowClickLoader(true);
       loaderTimerRef.current = setTimeout(() => {
         setShowClickLoader(false);
-      }, 550);
+      }, 2550);
     };
 
     document.addEventListener("click", handleGlobalClick, true);

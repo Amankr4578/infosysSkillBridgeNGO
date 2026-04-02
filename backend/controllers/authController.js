@@ -9,7 +9,24 @@ const PASSWORD_RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
 const isSmtpConfigured = () => {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS);
+  return Boolean(
+    SMTP_HOST?.trim() &&
+    SMTP_PORT?.toString().trim() &&
+    SMTP_USER?.trim() &&
+    SMTP_PASS?.trim()
+  );
+};
+
+const normalizeSmtpPass = () => {
+  const rawPass = String(process.env.SMTP_PASS || "").trim();
+  const host = String(process.env.SMTP_HOST || "").trim().toLowerCase();
+
+  // Gmail app passwords are often copied with spaces every 4 chars.
+  if (host === "smtp.gmail.com") {
+    return rawPass.replace(/\s+/g, "");
+  }
+
+  return rawPass;
 };
 
 const createVerificationToken = () => {
@@ -48,12 +65,12 @@ const createTransporter = () => {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
   return nodemailer.createTransport({
-    host: SMTP_HOST,
+    host: SMTP_HOST.trim(),
     port: Number(SMTP_PORT),
     secure: Number(SMTP_PORT) === 465,
     auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
+      user: SMTP_USER.trim(),
+      pass: normalizeSmtpPass(),
     },
   });
 };
@@ -258,10 +275,20 @@ exports.register = async (req, res) => {
         },
       });
     } catch (emailError) {
-      await User.findByIdAndDelete(user._id);
-      return res.status(500).json({
-        message: "Could not send verification email. Please try again.",
-        error: emailError.message,
+      // Keep the account so user can request resend later after SMTP is fixed.
+      return res.status(201).json({
+        message: "Account created, but we could not send verification email right now. Please use resend verification.",
+        requiresEmailVerification: true,
+        emailDeliveryFailed: true,
+        email: user.email,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          location: user.location,
+          isEmailVerified: user.isEmailVerified,
+        },
       });
     }
   } catch (error) {
